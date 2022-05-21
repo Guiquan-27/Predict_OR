@@ -10,11 +10,11 @@ Ovarian stimulation (OS), the foundation of successful ART treatments, has been 
 - **HORSM:** Strategy model for hyper ovarian response
 ## Features included in the submodels
 ### PORDM
-**13 baseline characteristics:** AMH, basal AFC, diagnosis including POI or DOR, basal FSH, age, P, weight, DBP, WBC, ALT, RBC, duration of infertility, basal LH
+**Baseline characteristics (13):** AMH, basal AFC, diagnosis including POI or DOR, basal FSH, age, P, weight, DBP, WBC, ALT, RBC, duration of infertility, basal LH
 ### HORDM
-**10 baseline characteristics:** AMH, basal AFC, basal FSH, Age, basal LH, diagnosis including POI or DOR, PCOS, PLT, weight, duration of infertility
+**Baseline characteristics (10):** AMH, basal AFC, basal FSH, Age, basal LH, diagnosis including POI or DOR, PCOS, PLT, weight, duration of infertility
 ### PORSM
-**Features of PORDM and four critical OS interventions**
+**Features of PORDM and four critical OS interventions (17)**
 ### PORSM
-**Features of HORDM and four critical OS interventions**
+**Features of HORDM and four critical OS interventions (14)**
 > **Four critical OS interventions:**  OS regimens, FSH starting dosage, using rFSH or uFSH, using exogenous LH or not
