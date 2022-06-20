@@ -16,4 +16,4 @@ Ovarian stimulation (OS), the foundation of successful ART treatments, has been 
 **Features of PORDM and four critical OS interventions (17)**
 ### PORSM
 **Features of HORDM and four critical OS interventions (14)**
-> **Four critical OS interventions:**  OS regimens, FSH starting dosage, using rFSH or uFSH, using exogenous LH or not
+> **Four critical OS interventions:**  OS protocol, FSH starting dose, using rFSH or uFSH, exogenous LH supplementation
