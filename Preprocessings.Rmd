@@ -1,0 +1,168 @@
+---
+title: "Cleaning"
+author: "Guiquan"
+date: "2021/5/3"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Data preparation, multiple imputation and some EDA analysis.
+
+# Data Preparation
+```{r}
+library(tidymodels)
+# Preparation of original data
+original <- openxlsx::read.xlsx("original_derivation.xlsx", detectDates = TRUE) %>% 
+  as_tibble() %>% 
+  mutate_if(is.character, as.factor)
+original_amp <- original %>% 
+  select(-c(ID, Optime, PRL, T, TC, TG, LDL, HDL, HCY, CA125, Insulin, BUN, FBG, BMI, A.panicillin, A.cepha, NG.DNA, UUorMH.DNA, Rh_neg, Num.pretrigger))
+set.seed(777)
+porsm_split_amp <- initial_split(original_amp, strata = POR, prop = 0.7)
+porsm_train_amp <- training(porsm_split_amp)
+porsm_test_amp <- testing(porsm_split_amp)
+horsm_split_amp <- initial_split(original_amp, strata = HOR, prop = 0.7)
+horsm_train_amp <- training(horsm_split_amp)
+horsm_test_amp <- testing(horsm_split_amp)
+```
+
+# EDA analysis
+## Prerequisites
+```{r}
+library(tidyverse)
+library(VIM)
+library(ggcorrplot)
+library(gridExtra)
+library(compareGroups)
+```
+
+## Missing data exploration
+```{r}
+# Missing proportion
+naniar::miss_var_summary(original) %>% mutate(pct_miss = round(pct_miss, 2)) %>% 
+  openxlsx::write.xlsx("inclusion and exclusion of initial covariates.xlsx")
+```
+
+# Multiple imputation of The Original Data using random forest based MICE.
+## Imputing missing data
+```{r}
+library(miceRanger)
+porsm_train_miceObj <- miceRanger(
+  porsm_train_amp,
+  m = 1,
+  maxiter = 100,
+  valueSelector = "meanMatch",
+  meanMatchCandidates = 5, 
+  seed = 777)
+porsm_test_miceObj <- miceRanger(
+  porsm_test_amp,
+  m = 1,
+  maxiter = 100,
+  valueSelector = "meanMatch",
+  meanMatchCandidates = 5, 
+  seed = 777)
+horsm_train_miceObj <- miceRanger(
+  horsm_train_amp,
+  m = 1,
+  maxiter = 100,
+  valueSelector = "meanMatch",
+  meanMatchCandidates = 5, 
+  seed = 777)
+horsm_test_miceObj <- miceRanger(
+  horsm_test_amp,
+  m = 1,
+  maxiter = 100,
+  valueSelector = "meanMatch",
+  meanMatchCandidates = 5, 
+  seed = 777)
+```
+
+## Diagnostic plotting
+```{r}
+plotDistributions(miceObj, vars = c("FSH", "LH", "E", "P", "AMH", "TP", "ALB", "ALT", "AST", "Cr", "RBC", "WBC", "PT", "APTT", "AFC"), ncol = 5, nrow = 3)
+plotCorrelations(miceObj, vars = "allNumeric", ncol = 5, nrow = 3)
+plotVarConvergence(miceObj, vars = "allNumeric", ncol = 5, nrow = 3)
+plotModelError(miceObj, vars = "allNumeric", ncol = 5, nrow = 3)
+plotImputationVariance(miceObj)
+```
+
+## Preparation of the imputed derivation data.
+```{r}
+porsm_train <- completeData(porsm_train_miceObj) %>% 
+  map_df(tibble) %>% select(-c(Num.oocytes, HOR))
+porsm_test <- completeData(porsm_test_miceObj) %>% 
+  map_df(tibble) %>% select(-c(Num.oocytes, HOR))
+porsm_data <- bind_rows(porsm_train, porsm_test)
+
+horsm_train <- completeData(horsm_train_miceObj) %>% 
+  map_df(tibble) %>% select(-c(Num.oocytes, POR))
+horsm_test <- completeData(horsm_test_miceObj) %>% 
+  map_df(tibble) %>% select(-c(Num.oocytes, POR))
+horsm_data <- bind_rows(horsm_train, horsm_test)
+```
+
+## Baseline characteristics table (original vs. imputed).
+```{r}
+compareGroups::descrTable(data = original_amp %>% select(c(AMH, P, E, AFC, Duration, FSH, LH, RBC, WBC, HCT, Ct.DNA, Men.frequency, DBP, SBP, Cr, PT, APTT, Menarche, ABO, ALB, AST, TP, Abnormal.his, Men.regularity, ALT, PLT, Hb, Education, Pri.Sec)), 
+                          method = NA,
+                          show.all = TRUE,
+                          digits = 2)
+
+compareGroups::descrTable(data = porsm_data %>% select(c(AMH, P, E, AFC, Duration, FSH, LH, RBC, WBC, HCT, Ct.DNA, Men.frequency, DBP, SBP, Cr, PT, APTT, Menarche, ABO, ALB, AST, TP, Abnormal.his, Men.regularity, ALT, PLT, Hb, Education, Pri.Sec)),
+                          method = NA,
+                          show.all = TRUE,
+                          digits = 2)
+
+compareGroups::descrTable(data = horsm_data %>% select(c(AMH, P, E, AFC, Duration, FSH, LH, RBC, WBC, HCT, Ct.DNA, Men.frequency, DBP, SBP, Cr, PT, APTT, Menarche, ABO, ALB, AST, TP, Abnormal.his, Men.regularity, ALT, PLT, Hb, Education, Pri.Sec)),
+                          method = NA,
+                          show.all = TRUE,
+                          digits = 2)
+```
+
+## Baseline characteristics table (original vs. validation).
+```{r}
+compareGroups::descrTable(Cat.oocytes ~ ., 
+                          data = original_amp %>% 
+                            select(Age, Duration, Weight, DBP, FSH, LH, P, WBC, RBC, PLT, ALT, AMH, AFC, POIorDOR, PCOS, Protocol, Initial.FSH, Recombinant, Use.LH, Num.oocytes) %>% 
+                            mutate(Cat.oocytes = case_when(Num.oocytes < 4 ~ "Poor",
+                                                           Num.oocytes > 20 ~ "High",
+                                                           TRUE ~ "Normal")) %>% 
+                            mutate_if(is.character, as.factor), 
+                          method = NA,
+                          show.all = TRUE, 
+                          digits = 1) 
+
+ningbo_baseline <- openxlsx::read.xlsx("validation for OR.xlsx", detectDates = TRUE) %>% 
+  select(Age, Duration, Weight, DBP, FSH, LH, P, WBC, RBC, PLT, ALT, AMH, AFC, POIorDOR, PCOS, Protocol, Initial.FSH, Recombinant, Use.LH, Num.oocytes, Cat.oocytes) %>% 
+  mutate_if(is.character, as.factor) %>% 
+  filter(if_all(everything(), ~ !is.na(.x)))
+compareGroups::descrTable(Cat.oocytes ~ ., 
+                          data = ningbo_baseline,
+                          method = NA,
+                          show.all = TRUE,
+                          digits = 2) 
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
