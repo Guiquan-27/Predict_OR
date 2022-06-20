@@ -3,8 +3,8 @@ Ovarian stimulation (OS), the foundation of successful ART treatments, has been 
 **More details:** (to edit)
 # The ML system
 ## Submodels included
-- **PORDM:** Diagnosis model for poor ovarian response
-- **HORDM:** Diagnosis model for hyper overian reponse
+- **PORDM:** Diagnostic model for poor ovarian response
+- **HORDM:** Diagnostic model for hyper overian reponse
 - **PORSM:** Strategy model for poor ovarian response
 - **HORSM:** Strategy model for hyper ovarian response
 ## Features included in the submodels
