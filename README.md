@@ -6,17 +6,17 @@ A publicly accessible web-based application based on this ML system is provided 
 **More details:** (to edit)
   
 ## Submodels included
-- **PORDM:** Diagnostic model for poor ovarian response
-- **HORDM:** Diagnostic model for hyper overian reponse
+- **PORRM:** Risk prediction model for poor ovarian response
+- **HORRM:** Risk prediction model for hyper overian reponse
 - **PORSM:** Strategy model for poor ovarian response
 - **HORSM:** Strategy model for hyper ovarian response
 ## Features included in the submodels
-### PORDM
+### PORRM
 - **Baseline characteristics (13):** AMH, basal AFC, diagnosis including POI or DOR, basal FSH, age, P, weight, DBP, WBC, ALT, RBC, duration of infertility, basal LH
-### HORDM
+### HORRM
 - **Baseline characteristics (10):** AMH, basal AFC, basal FSH, Age, basal LH, diagnosis including POI or DOR, PCOS, PLT, weight, duration of infertility
 ### PORSM
-- **Features of PORDM and four critical OS interventions (17)**
+- **Features of PORRM and four critical OS interventions (17)**
 ### PORSM
-- **Features of HORDM and four critical OS interventions (14)**
+- **Features of HORRM and four critical OS interventions (14)**
 > **Four critical OS therapeutic decisions:**  OS protocol, FSH starting dose, using rFSH or uFSH, exogenous LH supplementation
