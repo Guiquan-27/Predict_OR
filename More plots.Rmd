@@ -24,185 +24,203 @@ load(file = "E:/BaiduNetdiskWorkspace/or_Rwork/Additional Plots/roc_xgboost.RDat
 load(file = "E:/BaiduNetdiskWorkspace/or_Rwork/Additional Plots/roc_top.RData")
 ```
 
-# ROC curves of of candidate models based on six unique algorithms.
+# ROC curves of of candidate models.
 ```{r}
 library(pROC)
 library(tidyverse)
 library(MetBrewer)
-theme_set(theme_bw())
-windowsFonts(Avenir = windowsFont("Avenir Medium"))
+
+theme_set(theme_bw(base_size = 8, base_family = "sans", base_rect_size = 0.3))
 # Candidate PORSMs 
-p_porsm <- ggroc(list(roc_top_porsm, roc_xgboost_porsm, roc_rf_porsm, roc_lasso_porsm, roc_ridge_porsm, roc_mlp_porsm, roc_svm_porsm), legacy.axes = TRUE) + 
-  geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1), color = "darkgrey", linetype = "dashed", size = 0.5) +
+p_porsm <- ggroc(list(roc_xgboost_porsm, roc_rf_porsm, roc_lasso_porsm, roc_ridge_porsm, roc_mlp_porsm, roc_svm_porsm), 
+                 size = 0.4, legacy.axes = TRUE) + 
+  geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1), color = "darkgrey", linetype = "dashed", size = 0.4) +
   scale_x_continuous(name = "1 - Specificity", breaks = seq(0, 1, 0.2)) +
   scale_y_continuous(name = "Sensitivity", breaks = seq(0, 1, 0.2)) +
-  geom_line(size = 0.4) +
-  scale_color_manual(values = met.brewer("Tiepolo", 7), 
-                     labels = c("XGBoost top features (0.929, 0.065)", "XGBoost (0.930, 0.064)", 
-                  "Random Forest (0.925, 0.066)", "GLM-lasso (0.924, 0.067)",
-                  "GLM-ridge (0.920, 0.068)", "MLP (0.919, 0.121)", "SVM-RBF (0.915, 0.072)")) +
-  guides(color = guide_legend(title = "Model (AUROC, Brier score)")) +
-  theme(legend.background = element_rect(color = "black", size = 0.3),
+  scale_color_manual(values = met.brewer("Tiepolo", 6), 
+                     labels = c("XGBoost: 0.930(0.918-0.941), 0.064", 
+                                "Random forest: 0.925(0.912-0.937), 0.066", 
+                                "GLM-lasso: 0.924(0.911-0.935), 0.067", 
+                                "GLM-ridge: 0.920(0.908-0.932), 0.068", 
+                                "MLP: 0.919(0.905-0.932), 0.121", 
+                                "SVM-RBF: 0.915(0.902-0.927), 0.072")) +
+  guides(color = guide_legend(title = "Model: AUROC, Brier score")) +
+  theme(legend.background = element_rect(color = "black", size = 0.25),
         legend.title = element_text(face = "bold"),
         legend.title.align = 0.5,
         legend.key.height = unit(4, "mm"),
-        legend.key.width = unit(5, "mm"),
+        legend.key.width = unit(4, "mm"),
         legend.position = c(1, 0),
         legend.justification = c(1, 0),
-        line = element_line(size = 0.3),
-        rect = element_rect(size = 0.3),
-        text = element_text(size = 7, family = "Avenir"))
+        legend.margin = margin(t = 3, r = 8, b = 1, l = 2, unit = "pt"), 
+        plot.margin = margin(c(1, 1, 0, 2), unit = "mm"))
 
 # Candidate HORSMs
-p_horsm <- ggroc(list(roc_top_horsm, roc_xgboost_horsm, roc_lasso_horsm, roc_mlp_horsm, roc_ridge_horsm, roc_rf_horsm, roc_svm_horsm), legacy.axes = TRUE) +
-  geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1), color = "darkgrey", linetype = "dashed", size = 0.5) +
+p_horsm <- ggroc(list(roc_xgboost_horsm, roc_lasso_horsm, roc_mlp_horsm, roc_ridge_horsm, roc_rf_horsm, roc_svm_horsm), 
+                 size = 0.4, legacy.axes = TRUE) +
+  geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1), color = "darkgrey", linetype = "dashed", size = 0.4) +
   scale_x_continuous(name = "1 - Specificity", breaks = seq(0, 1, 0.2)) +
-  scale_y_continuous(name = "Sensitivity", breaks = seq(0, 1, 0.2)) +
-  geom_line(size = 0.4) +
-  scale_color_manual(values = met.brewer("Tiepolo", 7), 
-                     labels = c("XGBoost top features (0.869, 0.070)", "XGBoost (0.867, 0.071)",
-                                "GLM-lasso (0.863, 0.072)", "MLP (0.861, 0.121)", "GLM-ridge (0.859, 0.072)",
-                                "Random Forest (0.848, 0.072)", "SVM-RBF (0.847, 0.086)")) +
-  guides(color = guide_legend(title = "Model (AUROC, Brier score)")) +
-  theme(legend.background = element_rect(color = "black", size = 0.3),
+  scale_y_continuous(name = element_blank(), breaks = seq(0, 1, 0.2)) +
+  scale_color_manual(values = met.brewer("Tiepolo", 6), 
+                     labels = c("XGBoost: 0.867(0.851-0.883), 0.071",
+                                "GLM-lasso: 0.863(0.846-0.880), 0.072", 
+                                "MLP: 0.861(0.844-0.877), 0.121", 
+                                "GLM-ridge: 0.859(0.842-0.876), 0.072", 
+                                "Random forest: 0.848(0.831-0.866), 0.072", 
+                                "SVM-RBF: 0.847(0.830-0.864), 0.086")) +
+  guides(color = guide_legend(title = "Model: AUROC, Brier score")) +
+  theme(legend.background = element_rect(color = "black", size = 0.25),
         legend.title = element_text(face = "bold"),
         legend.title.align = 0.5,
         legend.key.height = unit(4, "mm"),
-        legend.key.width = unit(5, "mm"),
+        legend.key.width = unit(4, "mm"),
         legend.position = c(1, 0),
         legend.justification = c(1, 0),
-        line = element_line(size = 0.3),
-        rect = element_rect(size = 0.3),
-        text = element_text(size = 7, family = "Avenir"))
+        legend.margin = margin(t = 3, r = 8, b = 1, l = 2, unit = "pt"),
+        plot.margin = margin(c(1, 0.5, 0, 4), unit = "mm"))
 
 library(ggpubr)
-p_candidates <- ggarrange(p_porsm, p_horsm, ncol = 1, labels = c("A", "B"),
-                          font.label = list(size = 10, face = "bold", family = "sans"))
-ggsave(p_candidates, filename = "Figure 2.pdf", device = cairo_pdf, width = 112, height = 150, units = "mm")
+p_candidates <- ggarrange(p_porsm, p_horsm, nrow = 1, labels = c("A", "B"),
+                          font.label = list(size = 12, face = "bold", family = "sans"),
+                          hjust = c(0, -0.3), vjust = c(1, 1))
+ggsave(p_candidates, filename = "Figure 2.pdf", device = cairo_pdf, width = 172, height = 80, units = "mm")
 ```
 
-# Superiority analysis plot.
+# Comparisons and stress tests
+## Superiority analyses
 ```{r}
-superi_data <- openxlsx::read.xlsx("superiority_analysis.xlsx")
-theme_set(theme_bw(base_size = 6.5, base_family = "Avenir", base_line_size = 0.3, base_rect_size = 0.3))
+superi_data <- openxlsx::read.xlsx("E:/BaiduNetdiskWorkspace/Frank/My paper/On-writing/Predicting Ovarian Response/Results/superiority_analysis.xlsx")
+
+theme_set(theme_bw(base_size = 7.5, base_family = "sans", base_rect_size = 0.3))
 # PORSM relevant comparisons.
-psuper_porsm <- ggplot(superi_data) +
-  geom_point(aes(x = reorder(Mark, PORSM_mean), y = PORSM_mean), color = "#8b1d00") +
-  geom_segment(aes(x = Mark, y = PORSM_lower, xend = Mark, yend = PORSM_upper), color = "#aa4c4b") +
+psuper_porsm <- ggplot(superi_data %>% filter(Type == "PORSM")) +
+  geom_point(aes(x = reorder(Mark, Mean), y = Mean), color = "#8b1d00") +
+  geom_segment(aes(x = Mark, y = Lower, xend = Mark, yend = Upper), color = "#8b1d00") +
+  labs(x = element_blank(), y = "AUROC") +
   theme(panel.grid.minor = element_blank(),
         panel.grid.major = element_blank(),
-        axis.text.x = element_text(angle = 45, hjust = 0.5, vjust = 0.7)) +
-  labs(x = element_blank(), y = "AUROC") 
+        axis.text.x = element_text(angle = 45, hjust = 0.5, vjust = 0.7),
+        plot.margin = unit(c(0, 2, 0, 0), "mm")) 
 # PORDM relevant comparisons.
-psuper_pordm <- ggplot(superi_data) +
-  geom_point(aes(x = reorder(Mark, PORDM_mean), y = PORDM_mean), color = "#8b1d00") +
-  geom_segment(aes(x = Mark, y = PORDM_lower, xend = Mark, yend = PORDM_upper), color = "#aa4c4b") +
+psuper_pordm <- ggplot(superi_data %>% filter(Type == "PORRM")) +
+  geom_point(aes(x = reorder(Mark, Mean), y = Mean), color = "#e39e21") +
+  geom_segment(aes(x = Mark, y = Lower, xend = Mark, yend = Upper), color = "#e39e21") +
   theme(panel.grid.minor = element_blank(),
         panel.grid.major = element_blank(),
-        axis.text.x = element_text(angle = 45, hjust = 0.5, vjust = 0.7)) +
+        axis.text.x = element_text(angle = 45, hjust = 0.5, vjust = 0.7),
+        plot.margin = unit(c(0, 2, 0, -1), "mm")) +
   labs(x = element_blank(), y = element_blank())
 # HORSM relevant comparisons.
-psuper_horsm <- superi_data %>% 
-  mutate(Mark = fct_relevel(Mark, "Age", "FSH", "D1", "D2", "AFC", "AMH", "D3", "T2", "T1", "Q", "CDM", "Submodel")) %>% 
-ggplot() +
-  geom_point(aes(x = Mark, y = HORSM_mean), color = "#003652") +
-  geom_segment(aes(x = Mark, y = HORSM_lower, xend = Mark, yend = HORSM_upper), color = "#007dbc") +
+psuper_horsm <- ggplot(superi_data %>% filter(Type == "HORSM")) +
+  geom_point(aes(x = reorder(Mark, Mean), y = Mean), color = "#003652") +
+  geom_segment(aes(x = Mark, y = Lower, xend = Mark, yend = Upper), color = "#003652") +
   theme(panel.grid.minor = element_blank(),
         panel.grid.major = element_blank(),
-        axis.text.x = element_text(angle = 45, hjust = 0.5, vjust = 0.7)) +
+        axis.text.x = element_text(angle = 45, hjust = 0.5, vjust = 0.7),
+        plot.margin = unit(c(0, 2, 0, -1), "mm")) +
   labs(x = element_blank(), y = element_blank())
 # HORDM relevant comparisons.
-psuper_hordm <- superi_data %>% 
-  mutate(Mark = fct_relevel(Mark, "Age", "FSH", "D1", "D2", "AFC", "D3", "T1", "T2", "AMH", "Q", "CDM", "Submodel")) %>% 
-ggplot() +
-  geom_point(aes(x = Mark, y = HORDM_mean), color = "#003652") +
-  geom_segment(aes(x = Mark, y = HORDM_lower, xend = Mark, yend = HORDM_upper), color = "#007dbc") +
+psuper_hordm <- ggplot(superi_data %>% filter(Type == "HORRM")) +
+  geom_point(aes(x = reorder(Mark, Mean), y = Mean), color = "#007dbc") +
+  geom_segment(aes(x = Mark, y = Lower, xend = Mark, yend = Upper), color = "#007dbc") +
   theme(panel.grid.minor = element_blank(),
         panel.grid.major = element_blank(),
-        axis.text.x = element_text(angle = 45, hjust = 0.5, vjust = 0.7)) +
+        axis.text.x = element_text(angle = 45, hjust = 0.5, vjust = 0.7),
+        plot.margin = unit(c(0, 2, 0, -1), "mm")) +
   labs(x = element_blank(), y = element_blank()) +
   scale_y_continuous(breaks = seq(0.610, 0.890, 0.05))
 
-library(ggpubr)
-p_super <- ggarrange(psuper_porsm, psuper_pordm, psuper_horsm, psuper_hordm, nrow = 1,
-                     labels = "A", align = "v",
-                     font.label = list(size = 10, face = "bold", family = "sans"))
-ggsave(p_super, filename = "Figure 3A.pdf", device = cairo_pdf, width = 172, height = 45, units = "mm")
+p_super <- ggarrange(psuper_porsm, psuper_pordm, psuper_horsm, psuper_hordm, 
+                     ncol = 4, widths = c(1.1, 1, 1, 1)) 
 ```
 
-# ROC curves of the submodels in the external validation cohorts.
+## ROC curves of the Submodels in the external validation cohorts.
 ```{r}
+theme_set(theme_bw(base_size = 8, base_family = "sans", base_rect_size = 0.3))
 # POR diagnosis and strategy submodels in external validation.
-windowsFonts(Avenir = windowsFont("Avenir Medium"))
-
-p_por_external <- ggroc(list(roc_top_porsm_external, roc_top_pordm_external), legacy.axes = TRUE) + 
-  geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1), color = "darkgrey", linetype = "dashed", size = 0.5) +
+p_external <- ggroc(list(roc_top_porsm_external, roc_top_pordm_external, roc_top_horsm_external, roc_top_hordm_external), 
+                    size = 0.4, legacy.axes = TRUE) + 
+  geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1), color = "darkgrey", linetype = "dashed", size = 0.4) +
   scale_x_continuous(name = "1 - Specificity", breaks = seq(0, 1, 0.2)) +
   scale_y_continuous(name = "Sensitivity", breaks = seq(0, 1, 0.2)) +
-  geom_line(size = 0.5) +
-  scale_color_manual(values = c("#8b1d00", "#e39e21"), 
-                     labels = c("PORSM (0.857, 0.091)", "PORDM (0.848, 0.092)")) +
-  guides(color = guide_legend(title = "Submodel (AUROC, Brier score)")) +
-  theme(legend.background = element_rect(color = "black", size = 0.2),
-        legend.title = element_text(face = "bold", size = 6),
+  scale_color_manual(values = c("#8b1d00", "#e39e21", "#003652", "#007dbc"), 
+                     labels = c("PORSM: 0.857(0.842-0.871), 0.091", "PORRM: 0.848(0.832-0.862), 0.092",
+                                "HORSM: 0.820(0.802-0.837), 0.064", "HORRM: 0.822(0.804-0.839), 0.063")) +
+  guides(color = guide_legend(title = "Submodel: AUROC, Brier score")) +
+  theme(legend.background = element_rect(color = "black", size = 0.25),
+        legend.title = element_text(face = "bold"),
         legend.title.align = 0.5, 
-        legend.key.height = unit(3, "mm"),
-        legend.key.width = unit(3, "mm"),
-        legend.text = element_text(size = 6),
+        legend.key.height = unit(4, "mm"),
+        legend.key.width = unit(4, "mm"),
         legend.position = c(1, 0),
         legend.justification = c(1, 0),
-        line = element_line(size = 0.3),
-        rect = element_rect(size = 0.3),
-        text = element_text(size = 6.5, family = "Avenir"))
+        legend.margin = margin(3, 2, 1, 2, unit = "pt"),
+        plot.margin = margin(c(1, 5, 0, 0), unit = "mm"))
+```
 
-# HOR diagnosis and strategy submodels in external validation.
-p_hor_external <- ggroc(list(roc_top_horsm_external, roc_top_hordm_external), legacy.axes = TRUE) + 
-  geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1), color = "darkgrey", linetype = "dashed", size = 0.5) +
-  scale_x_continuous(name = "1 - Specificity", breaks = seq(0, 1, 0.2)) +
-  scale_y_continuous(name = "Sensitivity", breaks = seq(0, 1, 0.2)) +
-  geom_line(size = 0.5) +
-  scale_color_manual(values = c("#003652", "#007DBC"), 
-                     labels = c("HORSM (0.820, 0.064)", "HORDM (0.822, 0.063)")) +
-  guides(color = guide_legend(title = "Submodel (AUROC, Brier score)")) +
-  theme(legend.background = element_rect(color = "black", size = 0.2),
-        legend.title = element_text(face = "bold", size = 6),
-        legend.title.align = 0.5, 
-        legend.key.height = unit(3, "mm"),
-        legend.key.width = unit(3, "mm"),
-        legend.text = element_text(size = 6),
-        legend.position = c(1, 0),
-        legend.justification = c(1, 0),
-        line = element_line(size = 0.3),
-        rect = element_rect(size = 0.3),
-        text = element_text(size = 6.5, family = "Avenir"))
+## Table of stress tests
+```{r}
+stress <- tibble(Condition = c("Predicting POR", "    All top features available", "    Missing AFC", "    Missing AMH", "    Age < 35y", "    AMH > 1.1ng/mL or AFC >5", 
+                               "Predicting HOR", "    All top features available", "    Missing AFC", "    Missing AMH", "    Age ≥ 35y", "    AMH ≤ 3.4ng/mL or AFC ≤24"),
+                 `Strategy submodel,\nAUROC (95% CI)` = c("", "0.857 (0.842-0.871)", "0.856 (0.841-0.871)", 
+                                                          "0.833 (0.817-0.849)", "0.830 (0.808-0.851)", "0.802 (0.781-0.822)", 
+                                                          "", "0.820 (0.802-0.837)", "0.812 (0.794-0.829)", 
+                                                          "0.782 (0.762-0.801)", "0.872 (0.823-0.917)", "0.818 (0.799-0.835)"),
+                 `Risk submodel,\nAUROC (95% CI)` = c("", "0.848 (0.832-0.862)", "0.842 (0.827-0.857)", 
+                                                      "0.825 (0.808-0.841)", "0.819 (0.796-0.841)", "0.789 (0.767-0.808)", 
+                                                      "", "0.822 (0.804-0.839)", "0.814 (0.795-0.831)", 
+                                                      "0.784 (0.763-0.803)", "0.872 (0.819-0.918)", "0.819 (0.800-0.836)"))
+p_stress <- stress %>% 
+  ggtexttable(rows = NULL, 
+              theme = ttheme(
+                padding = unit(c(2, 2), "mm"),
+                colnames.style = colnames_style(hjust = 0, x = 0.02,
+                                                vjust = 0, y = 0.1,
+                                                size = 7.5, fill = "white"),
+                tbody.style = tbody_style(hjust = 0, x = 0.02,
+                                          linewidth = 1, 
+                                          size = 7.5, fill = "#f2f2f2"))) %>% 
+  tab_add_hline(at.row = c(2), row.side = "top", linewidth = 2, linetype = 1) %>% 
+  tab_add_hline(at.row = c(13), row.side = "bottom", linewidth = 2, linetype = 1) %>% 
+  tab_add_hline(at.row = c(7), row.side = "bottom", linewidth = 2, linetype = 1, linecolor = "grey70") 
+```
+## Arrange plots
+```{r}
+ggarrange(p_super, ggarrange(p_external, p_stress, ncol = 2, widths = c(1, 1.15),  
+                             labels = c("B", "C"), font.label = list(size = 12, face = "bold", family = "sans"),
+                             hjust = c(0, 0), vjust = c(1.5, 1.5)),
+          ncol = 1, heights = c(1, 1.6),
+          labels = "A", font.label = list(size = 12, face = "bold", family = "sans"),
+          hjust = 0, vjust = 1) %>% 
+  ggsave(filename = "Figure 3.pdf", device = cairo_pdf, width = 172, height = 108, units = "mm")
+```
+
+
+# Feature selection
+```{r}
+feature_ranking_porsm <- openxlsx::read.xlsx("E:/BaiduNetdiskWorkspace/Frank/My paper/On-writing/Predicting Ovarian Response/Results/shap_porsm.xlsx")
+feature_ranking_horsm <- openxlsx::read.xlsx("E:/BaiduNetdiskWorkspace/Frank/My paper/On-writing/Predicting Ovarian Response/Results/shap_horsm.xlsx")
 
 library(ggpubr)
-p_external <- ggarrange(p_por_external, p_hor_external, ncol = 2,
-                        labels = "B", align = "v",
-                        font.label = list(size = 10, face = "bold", family = "sans"))
-ggsave(p_external, filename = "Figure 3B.pdf", device = cairo_pdf, width = 112, height = 50, units = "mm")
-```
-# Feature selection plot.
-```{r}
-feature_ranking_porsm <- openxlsx::read.xlsx("shap_porsm.xlsx")
-feature_ranking_horsm <- openxlsx::read.xlsx("shap_horsm.xlsx")
-
-theme_set(theme_bw(base_size = 7, base_family = "Avenir", base_line_size = 0.3, base_rect_size = 0.3))
+theme_set(theme_bw(base_size = 10, base_family = "sans", base_rect_size = 0.3, base_line_size = 0.3))
 pfs_porsm <- ggplot(feature_ranking_porsm, aes(x = ranking, y = mean_abs_shap)) +
   geom_point(size = 0.5) +
   geom_line(size = 0.3) +
-  geom_vline(xintercept = 17, linetype = "dashed") +
-  labs(x = "Feature ranking by mean absolute SHAP value", y = "Mean absolute SHAP value")
+  geom_vline(xintercept = 17, linetype = "dashed", color = "grey50") +
+  labs(x = "Feature ranking by mean absolute SHAP value", y = "Mean absolute SHAP value") +
+  theme(plot.margin = margin(c(1, 10, 0, 0), "mm"))
 pfs_horsm <- ggplot(feature_ranking_horsm, aes(x = ranking, y = mean_abs_shap)) +
   geom_point(size = 0.5) +
   geom_line(size = 0.3) +
-  geom_vline(xintercept = 13, linetype = "dashed") +
-  labs(x = "Feature ranking by mean absolute SHAP value", y = element_blank())
-library(ggpubr)
-p_fs <- ggarrange(pfs_porsm, pfs_horsm, ncol = 2,
+  geom_vline(xintercept = 13, linetype = "dashed", color = "grey50") +
+  labs(x = "Feature ranking by mean absolute SHAP value", y = element_blank()) +
+  theme(plot.margin = margin(c(1, 0, 0, 6), "mm"))
+
+p_fs <- ggarrange(pfs_porsm, pfs_horsm, ncol = 2, widths = c(1, 1),
                   labels = c("A", "B"), 
-                  font.label = list(size = 10, face = "bold", family = "sans"))
-ggsave(p_fs, filename = "Figure S2.pdf", device = cairo_pdf, width = 172, height = 80, units = "mm")
+                  font.label = list(size = 12, face = "bold", family = "sans"),
+                  hjust = c(0, 0.5), vjust = c(1, 1))
+ggsave(p_fs, filename = "Figure S2.png", device = "png", width = 172, height = 80, units = "mm", dpi = 600)
 ```
 
 
