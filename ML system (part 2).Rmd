@@ -115,6 +115,7 @@ plot_porsm <- predict(porsm_top_final, porsm_top_val, type = "prob") %>%
   summarise(estimated_prob = mean(.pred_Yes),
             actual_prob = mean(POR_r)) %>% 
   mutate(model = "PORSM (0.091)")
+
 plot_pordm <- predict(pordm_top_final, pordm_top_val, type = "prob") %>% 
   bind_cols(porsm_top_val %>% select(POR)) %>% 
   mutate(POR_r = if_else(POR == "Yes", 1, 0)) %>% select(-POR) %>% 
@@ -124,7 +125,9 @@ plot_pordm <- predict(pordm_top_final, pordm_top_val, type = "prob") %>%
   group_by(bin) %>% 
   summarise(estimated_prob = mean(.pred_Yes),
             actual_prob = mean(POR_r)) %>% 
-  mutate(model = "PORDM (0.092)")
+  mutate(model = "PORRM (0.092)")
+plot_pordm <- mutate(plot_pordm, model = "PORRM (0.092)")
+
 plot_horsm <- predict(horsm_top_final, horsm_top_val, type = "prob") %>% 
   bind_cols(horsm_top_val %>% select(HOR)) %>% 
   mutate(HOR_r = if_else(HOR == "Yes", 1, 0)) %>% select(-HOR) %>% 
@@ -144,12 +147,12 @@ plot_hordm <- predict(hordm_top_final, horsm_top_val, type = "prob") %>%
   group_by(bin) %>% 
   summarise(estimated_prob = mean(.pred_Yes),
             actual_prob = mean(HOR_r)) %>% 
-  mutate(model = "HORDM (0.063)")
-plot_calibration <- bind_rows(plot_porsm, plot_pordm, plot_horsm, plot_hordm)
+  mutate(model = "HORRM (0.063)")
+plot_hordm <- mutate(plot_hordm, model = "HORRM (0.063)")
 
+plot_calibration <- bind_rows(plot_porsm, plot_pordm, plot_horsm, plot_hordm)
 # Plot calibration curve.
-theme_set(theme_bw())
-windowsFonts(Avenir = windowsFont("Avenir Medium"))
+theme_set(theme_bw(base_size = 10, base_family = "sans", base_rect_size = .5))
 p_calibration <- ggplot(data = plot_calibration, 
                         aes(x = estimated_prob, y = actual_prob, fill = model, 
                             color = model, shape = model)) +
@@ -169,14 +172,15 @@ p_calibration <- ggplot(data = plot_calibration,
         legend.title.align = 0.5,
         legend.title = element_text(face = "bold"),
         legend.position = c(1, 0),
+        legend.key.height = unit(5, "mm"),
         legend.justification = c(1, 0),
         legend.box.background = element_rect(fill = "White"),
-        text = element_text(size = 7, family = "Avenir")) 
-ggsave(p_calibration, filename = "Figure S3.pdf", device = cairo_pdf, width = 112, height = 80, units = "mm")
+        plot.margin = margin(c(0, 0, 0, 0), "mm"))
+ggsave(p_calibration, filename = "Figure S3.png", device = "png", width = 112, height = 80, units = "mm", dpi = 600)
 ```
 
 # SHAP related plots.
-## Prepare data.
+## Prepare datas.
 ```{r}
 porsm_top_data_forshap <- recipe(POR ~., data = porsm_top_data) %>% 
   step_dummy(all_nominal_predictors()) %>% 
@@ -202,7 +206,7 @@ hordm_top_data_forshap <- recipe(HOR ~., data = hordm_top_data) %>%
   bake(new_data = NULL) %>% 
   select(-HOR) %>% 
   as.matrix()
-or_complete <- openxlsx::read.xlsx("original_derivation.xlsx") %>% 
+or_complete <- openxlsx::read.xlsx("E:/BaiduNetdiskWorkspace/or_Rwork/raw_to_amp/original_final_or.xlsx") %>% 
   as_tibble() %>% 
   select(AMH, AFC, FSH, LH, POIorDOR, Age, Weight, Duration, PCOS, PLT, P, DBP, WBC, ALT, RBC, POR, HOR) %>% 
   mutate_if(is.character, as.factor) %>% 
@@ -226,6 +230,7 @@ pred_or_complete <- or_complete %>% mutate(id = rep(1: 7808)) %>%
   rename(pred_HOR = .pred_class) %>% 
   bind_cols(predict(hordm_top_wf_v, or_complete, type = "prob")) %>% 
   select(-.pred_No) %>% rename(prob_HOR = .pred_Yes) 
+
 instance_por <- pred_or_complete %>% 
   filter(id == 2583)
 instance_hor <- pred_or_complete %>% 
@@ -249,33 +254,32 @@ pordm_shap_trans <- pordm_shap_prep %>% select(variable, rfvalue) %>%
   step_YeoJohnson(-c(ID, POIorDOR_Yes)) %>% 
   step_filter(AFC<9, FSH>0.9, FSH<2.4, ALT>1.15, LH>0.5, LH<2.5, WBC>1.16, RBC>0.975, RBC<1.175, P<1.4, Duration<2.6) %>% 
   step_range(-c(ID, POIorDOR_Yes), min = 0, max = 1) %>% 
-  prep() %>% bake(new_data = NULL) %>% summary()
+  prep() %>% bake(new_data = NULL) %>%
   pivot_longer(-ID, names_to = "variable", values_to = "rfvalue") %>% 
   left_join(., pordm_shap_prep %>% select(variable, value, stdfvalue, mean_value) %>% 
               mutate(ID = rep(1:12012, 13)), by = c("ID", "variable")) %>% 
   arrange(desc(mean_value)) %>% 
   mutate(ID = rep(1:11762, 13)) %>% select(1:2, value, everything()) %>% 
-  mutate(variable = forcats::fct_reorder(as.factor(variable), .x = mean_value))
+  mutate(variable = forcats::fct_recode(variable, "POI or DOR" = "POIorDOR_Yes", Progesterone = "P"),
+         variable = forcats::fct_reorder(as.factor(variable), .x = mean_value))
 
-theme_set(theme_bw())
-windowsFonts(Avenir = windowsFont("Avenir Medium"))
-p_shapsum_pordm <- pordm_shap_trans %>%  
+theme_set(theme_bw(base_size = 10, base_family = "sans", base_rect_size = 0.3))
+p_shapsum_pordm <- pordm_shap_trans %>% 
+  group_by(variable) %>% 
+  slice_sample(prop = .2) %>% 
   ggplot(aes(x = variable, y = value, color = rfvalue)) +
-  ggforce::geom_sina(alpha = 1, 
-                     size = 0.1,
+  ggforce::geom_sina(alpha = 0.5, 
+                     size = 0.05,
                      method = "density",
-                     maxwidth = 0.5) + 
+                     maxwidth = 0.5) +
   geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.5) +
   coord_flip() +
   scale_color_gradientn(colors = c("#007dbc", "#eadbeb", "#8b1d00")) +
   labs(x = "Top features", y = "SHAP value (impact on model output)") +
   guides(color = guide_colorbar(title = "Standardized feature value",
                                 title.position = "top", barwidth = 6, barheight = 0.7)) +
-  theme(legend.position = "bottom",
-        legend.title.align = 0.5,
-        line = element_line(size = 0.5),
-        rect = element_rect(size = 0.5),
-        text = element_text(size = 7, family = "Avenir")) 
+  theme(legend.title.align = 0,
+        plot.margin = margin(c(0, 6, 0, 0), "mm")) 
 
 # Local explanation
 library(DALEXtra)
@@ -294,7 +298,9 @@ shap_normal_pordm <- predict_parts(explainer = explainer_pordm,
                           new_observation = instance_normal,
                           type = "shap",
                           B = 100)
-shaplocal_pordm1 <- shap_por %>% 
+
+theme_set(theme_bw(base_size = 10, base_family = "sans", base_rect_size = 0.5))
+p_shaplocal_pordm1 <- shap_por %>% 
   group_by(variable) %>% 
   mutate(mean_val = mean(contribution)) %>% 
   ungroup() %>% 
@@ -307,14 +313,17 @@ shaplocal_pordm1 <- shap_por %>%
            alpha = .5) +
   geom_boxplot(width = .5, size = 0.2,
                outlier.shape = NA) +
-  scale_fill_manual(values = c("#8b1d00", "#007dbc")) +
+  scale_fill_manual(values = c("#8b1d00", "#007dbc"),
+                    labels = c("Drive prediction towards POR/HOR", "Drive prediction towards non-POR/non-HOR")) +
   labs(y = NULL, x = NULL) +
-  theme(legend.position = "none",
-        text = element_text(size = 6.5, family = "Avenir"),
+  theme(legend.title = element_blank(),
+        legend.position = "bottom",
+        legend.direction = "horizontal",
         panel.grid = element_blank(),
-        rect = element_rect(size = 0.5),
-        axis.text.y = element_text(angle = 45, hjust = 0.5, vjust = 0.5))
+        axis.text.y = element_text(angle = 45, hjust = 0.5, vjust = 0.5),
+        plot.margin = margin(c(4, 4, 0, 0), "mm"))
 
+theme_set(theme_bw(base_size = 10, base_family = "sans", base_rect_size = 0.5))
 p_shaplocal_pordm2 <- shap_normal_pordm %>% 
   group_by(variable) %>% 
   mutate(mean_val = mean(contribution)) %>% 
@@ -331,10 +340,9 @@ p_shaplocal_pordm2 <- shap_normal_pordm %>%
   scale_fill_manual(values = c("#8b1d00", "#007dbc")) +
   labs(y = NULL, x = "SHAP value (impact on POR prediction)") +
   theme(legend.position = "none",
-        text = element_text(size = 6.5, family = "Avenir"),
         panel.grid = element_blank(),
-        rect = element_rect(size = 0.5),
-        axis.text.y = element_text(angle = 45, hjust = 0.5, vjust = 0.5))
+        axis.text.y = element_text(angle = 45, hjust = 0.5, vjust = 0.5),
+        plot.margin = margin(c(4, 4, 0, 0), "mm"))
 ```
 
 ## HORDM related plots.
@@ -352,32 +360,32 @@ hordm_shap_trans <- hordm_shap_prep %>% select(variable, rfvalue) %>%
   step_filter(AFC<9, FSH>0.9, FSH<2.4, LH>0.5, LH<2.5, Duration<2.6, PLT < 23, PLT > 12.5) %>% 
   step_range(-c(ID, POIorDOR_Yes, PCOS_Yes), min = 0, max = 1) %>% 
   prep() %>% bake(new_data = NULL) %>%  
-  pivot_longer(-ID, names_to = "variable", values_to = "rfvalue") %>% 
+  pivot_longer(-ID, names_to = "variable", values_to = "rfvalue") %>% zz
   left_join(., hordm_shap_prep %>% select(variable, value, stdfvalue, mean_value) %>% 
               mutate(ID = rep(1:12012, 10)), by = c("ID", "variable")) %>% 
   arrange(desc(mean_value)) %>% 
   mutate(ID = rep(1:11743, 10)) %>% select(1:2, value, everything()) %>% 
-  mutate(variable = forcats::fct_reorder(as.factor(variable), .x = mean_value)) 
+  mutate(variable = forcats::fct_recode(variable, "POI or DOR" = "POIorDOR_Yes",
+                                        "PCOS" = "PCOS_Yes", Platelet = "PLT"),
+         variable = forcats::fct_reorder(as.factor(variable), .x = mean_value)) 
 
-theme_set(theme_bw())
-windowsFonts(Avenir = windowsFont("Avenir Medium"))
+theme_set(theme_bw(base_size = 10, base_family = "sans", base_rect_size = 0.3))
 p_shapsum_hordm <- hordm_shap_trans %>% 
+  group_by(variable) %>% 
+  slice_sample(prop = .2) %>% 
   ggplot(aes(x = variable, y = value, color = rfvalue)) +
-  ggforce::geom_sina(alpha = 1, 
-                     size = 0.1, 
+  ggforce::geom_sina(alpha = 0.5, 
+                     size = 0.05, 
                      method = "counts",
-                     maxwidth = 0.8) + 
+                     maxwidth = 0.75,
+                     show.legend = FALSE) + 
   geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.5) +
   coord_flip() +
   scale_color_gradientn(colors = c("#007dbc", "#eadbeb", "#8b1d00")) +
   labs(x = element_blank(), y = "SHAP value (impact on model output)") +
   guides(color = guide_colorbar(title = "Standardized feature value",
                                 title.position = "top", barwidth = 6, barheight = 0.7)) +
-  theme(legend.position = "bottom",
-        legend.title.align = 0.5,
-        line = element_line(size = 0.5),
-        rect = element_rect(size = 0.5),
-        text = element_text(size = 7, family = "Avenir")) 
+  theme(plot.margin = margin(c(0, 0, 0, 4), "mm")) 
 
 # Local explanation
 library(DALEXtra)
@@ -396,6 +404,8 @@ shap_normal_hordm <- predict_parts(explainer = explainer_hordm,
                           new_observation = instance_normal,
                           type = "shap",
                           B = 100)
+
+theme_set(theme_bw(base_size = 10, base_family = "sans", base_rect_size = 0.5))
 p_shaplocal_hordm1 <- shap_hor %>% 
   group_by(variable) %>% 
   mutate(mean_val = mean(contribution)) %>% 
@@ -412,11 +422,11 @@ p_shaplocal_hordm1 <- shap_hor %>%
   scale_fill_manual(values = c("#8b1d00", "#007dbc")) +
   labs(y = NULL, x = NULL) +
   theme(legend.position = "none",
-        text = element_text(size = 6.5, family = "Avenir"),
         panel.grid = element_blank(),
-        rect = element_rect(size = 0.5),
-        axis.text.y = element_text(angle = 45, hjust = 0.5, vjust = 0.5))
+        axis.text.y = element_text(angle = 45, hjust = 0.5, vjust = 0.5),
+        plot.margin = margin(c(4, 0, 0, 4), "mm"))
 
+theme_set(theme_bw(base_size = 10, base_family = "sans", base_rect_size = 0.5))
 p_shaplocal_hordm2 <- shap_normal_hordm %>% 
   group_by(variable) %>% 
   mutate(mean_val = mean(contribution)) %>% 
@@ -433,25 +443,29 @@ p_shaplocal_hordm2 <- shap_normal_hordm %>%
   scale_fill_manual(values = c("#8b1d00", "#007dbc")) +
   labs(y = NULL, x = "SHAP value (impact on HOR prediction)") +
   theme(legend.position = "none",
-        text = element_text(size = 6.5, family = "Avenir"),
         panel.grid = element_blank(),
-        rect = element_rect(size = 0.5),
-        axis.text.y = element_text(angle = 45, hjust = 0.5, vjust = 0.5))
+        axis.text.y = element_text(angle = 45, hjust = 0.5, vjust = 0.5),
+        plot.margin = margin(c(4, 0, 0, 4), "mm"))
 ```
 
 ## Combinations of plots
 ```{r}
 # Combination of summary plots.
 library(ggpubr)
-p_shapsum <- ggarrange(p_shapsum_pordm, p_shapsum_hordm, nrow = 1, labels = c("B", "C"),
-                          font.label = list(size = 10, face = "bold", family = "sans"))
-ggsave(p_shapsum, filename = "Figure 4BC.pdf", device = cairo_pdf, width = 172, height = 100, units = "mm")
+ggarrange(p_shapsum_pordm, p_shapsum_hordm, nrow = 1, widths = c(1.05, 1),
+          labels = c("B", "C"),
+          font.label = list(size = 12, face = "bold", family = "sans"),
+          common.legend = TRUE, legend = "bottom",
+          hjust = c(0, 0), vjust = c(1, 1)) %>% 
+ggsave(filename = "Figure 4BC.pdf", device = cairo_pdf, width = 172, height = 100, units = "mm")
 
 # Combination of local explanation plots
 p_local <- ggarrange(p_shaplocal_pordm1, p_shaplocal_hordm1, p_shaplocal_pordm2,p_shaplocal_hordm2, 
-                     ncol = 2, nrow = 2, align = "h" , labels = c("A", "C", "B", "D"),
-                     font.label = list(size = 10, face = "bold", family = "sans"))
-ggsave(p_local, filename = "Figure 5.pdf", device = cairo_pdf, width = 112, height = 140, units = "mm")
+                     ncol = 2, nrow = 2, labels = c("A", "C", "B", "D"),
+                     font.label = list(size = 12, face = "bold", family = "sans"),
+                     hjust = c(0, -0.5, 0, -0.5), vjust = c(1, 1, 1, 1),
+                     legend = "bottom", common.legend = TRUE)
+ggsave(p_local, filename = "Figure S4.png", device = "png", width = 172, height = 215, units = "mm", dpi = 600)
 ```
 
 
